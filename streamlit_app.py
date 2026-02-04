@@ -8,18 +8,34 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 import plotly.express as px
-import shap
+import psutil
+import os
+
+# --- MONITORING UTILITY ---
+def display_performance_monitor():
+    """Tracks CPU and RAM usage of the current Streamlit process."""
+    process = psutil.Process(os.getpid())
+    # Resident Set Size (Physical Memory) in MB
+    mem_mb = process.memory_info().rss / (1024 * 1024)
+    # CPU usage over a short interval
+    cpu_percent = process.cpu_percent(interval=0.1)
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ System Monitor")
+    c1, c2 = st.sidebar.columns(2)
+    c1.metric("CPU Load", f"{cpu_percent}%")
+    c2.metric("RAM Usage", f"{mem_mb:.1f} MB")
 
 # ---------------------------------
 # Page Config
 # ---------------------------------
 st.set_page_config(page_title="Module 4 Week 1 Notebook 1 – Interactive App", layout="wide")
 
-st.title("Module 4 Week 1 Notebook 1 – Shared Biomedical AI Vocabulary")
+st.title("🔬 Shared Biomedical AI Vocabulary")
 st.write("This interactive notebook walks you through Activities 1–5 using a diabetes dataset.")
 
 # ---------------------------------
-# Sidebar – Activity Navigation
+# Sidebar – Activity Navigation & Monitor
 # ---------------------------------
 activity = st.sidebar.radio(
     "Choose an Activity:",
@@ -32,14 +48,17 @@ activity = st.sidebar.radio(
     ]
 )
 
+# Load performance monitor into sidebar
+display_performance_monitor()
+
 # ---------------------------------
 # Load Example Dataset (Cached)
 # ---------------------------------
 @st.cache_data
 def load_data():
+    # Caching stores this in RAM to avoid re-downloading
     df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv")
     return df
-
 
 df = load_data()
 st.sidebar.success("Dataset Loaded: diabetes.csv")
@@ -59,8 +78,8 @@ if activity == "Activity 1 – Explore Data Types":
     st.write(df[selected_columns].dtypes)
 
     st.info("""
-Outcome Variable: `Outcome` — binary categorical (0 = no diabetes, 1 = diabetes).  
-Predictor Variables: All other columns — numerical features.
+**Outcome Variable:** `Outcome` — binary categorical (0 = no diabetes, 1 = diabetes).  
+**Predictor Variables:** All other columns — numerical features.
 """)
 
 # --------------------
@@ -112,9 +131,12 @@ elif activity == "Activity 3 – Train a Model":
 
     st.subheader("Optional: Modify first row values")
     edited_inputs = {}
-    for col in df.columns[:-1]:
-        edited_inputs[col] = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].iloc[0]))
-    st.write("Edited values (first row):", edited_inputs)
+    cols = df.columns[:-1]
+    # Create columns for inputs to save space
+    input_cols = st.columns(4)
+    for idx, col in enumerate(cols):
+        with input_cols[idx % 4]:
+            edited_inputs[col] = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].iloc[0]))
 
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values
@@ -123,13 +145,15 @@ elif activity == "Activity 3 – Train a Model":
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
-    st.metric("Accuracy", f"{acc:.3f}")
+    st.metric("Test Set Accuracy", f"{acc:.3f}")
 
     if model_choice == "Decision Tree":
         st.subheader("Decision Tree Visualization")
         fig, ax = plt.subplots(figsize=(15, 8))
-        plot_tree(model, feature_names=df.columns[:-1], class_names=["0", "1"], filled=True)
+        plot_tree(model, feature_names=df.columns[:-1], class_names=["0", "1"], filled=True, fontsize=10)
         st.pyplot(fig)
+        
+        
 
 # --------------------
 # Activity 4 – Cross-Validation
@@ -149,11 +173,15 @@ elif activity == "Activity 4 – Cross-Validation":
 
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values
+    
+    # This triggers multiple training cycles; watch the CPU metric spike!
     scores = cross_val_score(model, X, y, cv=cv_folds)
 
     st.write("Fold Accuracies")
     st.write(scores)
     st.metric("Mean CV Accuracy", f"{np.mean(scores):.3f}")
+    
+    
 
 # --------------------
 # Activity 5 – Alternative Methods
@@ -161,13 +189,13 @@ elif activity == "Activity 4 – Cross-Validation":
 elif activity == "Activity 5 – Alternative Methods":
     st.header("Activity 5 – Alternative Modeling Approaches")
 
-    st.write("Why use a Decision Tree?")
+    st.write("### Why use a Decision Tree?")
     st.info("Decision Trees are simple, interpretable, and show how decisions are made step-by-step.")
 
-    st.write("Other models to consider:")
+    st.write("### Other models to consider:")
     st.markdown("""
-- Random Forest: Reduces overfitting by averaging multiple trees.
-- Logistic Regression: Good baseline linear model.
-- XGBoost / Gradient Boosting: High-performance models for structured data.
-- Neural Networks: Useful when capturing complex nonlinear patterns.
+- **Random Forest:** Reduces overfitting by averaging multiple trees (Ensemble method).
+- **Logistic Regression:** Good baseline linear model for binary classification.
+- **XGBoost / Gradient Boosting:** High-performance models often used in competitions.
+- **Neural Networks:** Useful when capturing complex nonlinear patterns in very large datasets.
 """)
