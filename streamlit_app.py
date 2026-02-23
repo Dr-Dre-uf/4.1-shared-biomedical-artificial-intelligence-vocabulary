@@ -20,9 +20,10 @@ def display_performance_monitor():
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("System Monitor")
+    st.sidebar.caption("Tracks the resource usage of this app in real-time.")
     c1, c2 = st.sidebar.columns(2)
-    c1.metric("CPU Load", f"{cpu_percent}%")
-    c2.metric("RAM Usage", f"{mem_mb:.1f} MB")
+    c1.metric("CPU Load", f"{cpu_percent}%", help="Current CPU usage of the Streamlit server.")
+    c2.metric("RAM Usage", f"{mem_mb:.1f} MB", help="Current RAM memory allocated to this app.")
 
 # ---------------------------------
 # Page Config & Sidebar
@@ -33,7 +34,7 @@ st.sidebar.markdown("### 1. Select Perspective")
 perspective = st.sidebar.radio(
     "Choose your scientific context:",
     ["Clinical Care", "Foundational Science"],
-    help="Switching this changes the terminology and focus of the application."
+    help="Switching this changes the terminology and focus of the application to either direct patient care or biomedical research."
 )
 
 st.sidebar.markdown("### 2. Navigation")
@@ -44,7 +45,8 @@ activity = st.sidebar.radio(
         "Activity 2 - Preprocessing & Splitting",
         "Activity 3 - Model Training (Neural Nets)",
         "Activity 4 - Cross-Validation Analysis"
-    ]
+    ],
+    help="Select a module to learn about different stages of the machine learning pipeline."
 )
 
 display_performance_monitor()
@@ -54,7 +56,7 @@ display_performance_monitor()
 # ---------------------------------
 if perspective == "Clinical Care":
     app_title = "Predicting In-Hospital Mortality"
-    app_desc = "Explore the machine learning pipeline for critical care. This app models in-hospital mortality using eICU data to support ICU triage and patient survival, serving as a stepping stone toward complex CNNs."
+    app_desc = "Explore the machine learning pipeline for critical care. This app models in-hospital mortality using eICU data to support ICU triage and patient survival, serving as a stepping stone toward complex Convolutional Neural Networks (CNNs)."
     outcome_label = "In-Hospital Mortality"
     simulator_title = "Live ICU Patient Simulator"
     simulator_desc = "Adjust the critical care metrics below. The model will instantly predict mortality risk based on patient patterns."
@@ -62,7 +64,7 @@ if perspective == "Clinical Care":
     alert_low = "Low Risk of In-Hospital Mortality"
 else:
     app_title = "Modeling Systemic Failure Mechanisms"
-    app_desc = "Explore the machine learning pipeline for biomedical research. This app models physiological collapse using eICU data to discover critical biomarker interactions and pathways."
+    app_desc = "Explore the machine learning pipeline for biomedical research. This app models physiological collapse using eICU data to discover critical biomarker interactions and metabolic pathways."
     outcome_label = "Systemic Failure (Mortality)"
     simulator_title = "Live Biomarker Experiment"
     simulator_desc = "Adjust the biological assays below. The model will predict the likelihood of physiological systemic failure based on metabolic interactions."
@@ -79,7 +81,7 @@ st.write(app_desc)
 def load_data():
     df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv")
     
-    # Rename columns to simulate the notebook's required eICU features (glucose, creatinine, potassium, etc.)
+    # Rename columns to simulate the notebook's required eICU features
     icu_mapping = {
         "Pregnancies": "Prior ICU Admissions",
         "Glucose": "Admission Glucose (mg/dL)",
@@ -89,7 +91,7 @@ def load_data():
         "BMI": "BMI",
         "DiabetesPedigreeFunction": "Genetic Risk Index",
         "Age": "Age",
-        "Outcome": "Target" # Kept generic here, renamed dynamically in charts
+        "Outcome": "Target" # Kept generic internally, renamed dynamically in charts
     }
     df = df.rename(columns=icu_mapping)
     return df
@@ -107,7 +109,11 @@ if activity == "Activity 1 - Explore eICU Data":
         st.write("Before building a neural network, inspect the biological distributions to identify potential markers of physiological collapse.")
 
     st.subheader("Data Preview & Types")
-    n_rows = st.slider("Number of records to display", min_value=1, max_value=20, value=5)
+    n_rows = st.slider(
+        "Number of records to display", 
+        min_value=1, max_value=20, value=5,
+        help="Drag the slider to increase or decrease the number of rows visible in the table below."
+    )
     
     # Rename outcome column just for display based on perspective
     display_df = df.copy()
@@ -115,7 +121,11 @@ if activity == "Activity 1 - Explore eICU Data":
     st.dataframe(display_df.head(n_rows), use_container_width=True)
     
     st.subheader("Feature Distributions")
-    feature_to_plot = st.selectbox("Select an eICU feature to visualize:", df.columns[:-1])
+    feature_to_plot = st.selectbox(
+        "Select an eICU feature to visualize:", 
+        df.columns[:-1],
+        help="Choose a specific metric to see a histogram of its distribution."
+    )
     
     fig = px.histogram(
         display_df, 
@@ -139,7 +149,11 @@ elif activity == "Activity 2 - Preprocessing & Splitting":
 
     col1, col2 = st.columns(2)
     with col1:
-        test_size = st.slider("Hold-out test set size (percentage)", min_value=0.1, max_value=0.5, value=0.2, step=0.05)
+        test_size = st.slider(
+            "Hold-out test set size (percentage)", 
+            min_value=0.1, max_value=0.5, value=0.2, step=0.05,
+            help="The proportion of the dataset to reserve for testing. 0.2 means 20% of the data will be hidden from the model during training."
+        )
     with col2:
         scale_option = st.selectbox(
             "Feature Scaling Technique", 
@@ -180,19 +194,34 @@ elif activity == "Activity 3 - Model Training (Neural Nets)":
     col1, col2 = st.columns(2)
     
     with col1:
-        model_choice = st.selectbox("Choose an Algorithm", ["Deep Neural Network (MLP)", "Decision Tree", "Random Forest"])
+        model_choice = st.selectbox(
+            "Choose an Algorithm", 
+            ["Deep Neural Network (MLP)", "Decision Tree", "Random Forest"],
+            help="Select the algorithm you want to train on the eICU dataset."
+        )
     
     with col2:
         if model_choice == "Decision Tree":
-            max_depth = st.slider("Max Depth", 1, 20, 4)
+            max_depth = st.slider(
+                "Max Depth", 1, 20, 4,
+                help="Controls how deep the tree can grow. A higher depth can capture more complex patterns but risks overfitting."
+            )
             model = DecisionTreeClassifier(max_depth=max_depth, random_state=42)
         elif model_choice == "Random Forest":
-            max_depth = st.slider("Max Depth", 1, 20, 4)
+            max_depth = st.slider(
+                "Max Depth", 1, 20, 4,
+                help="The maximum depth of each individual tree in the forest."
+            )
             model = RandomForestClassifier(n_estimators=100, max_depth=max_depth, random_state=42)
         else:
-            hidden_layers = st.selectbox("Hidden Layer Architecture", [(64, 32), (128, 64, 32), (32, 16)])
+            hidden_layers = st.selectbox(
+                "Hidden Layer Architecture", 
+                [(64, 32), (128, 64, 32), (32, 16)],
+                help="Defines the structure of the neural network. E.g., (64, 32) means two hidden layers with 64 and 32 neurons respectively."
+            )
             st.caption("Multiple hidden layers allow the network to learn complex physiological representations.")
-            model = MLPClassifier(hidden_layer_sizes=hidden_layers, max_iter=1000, random_state=42)
+            # Added early_stopping to ensure smooth performance
+            model = MLPClassifier(hidden_layer_sizes=hidden_layers, max_iter=500, early_stopping=True, random_state=42)
 
     # Train behind the scenes
     X = df.iloc[:, :-1].values
@@ -210,7 +239,11 @@ elif activity == "Activity 3 - Model Training (Neural Nets)":
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         
-    st.metric("Test Set Accuracy", f"{accuracy_score(y_test, y_pred):.3f}")
+    st.metric(
+        "Test Set Accuracy", 
+        f"{accuracy_score(y_test, y_pred):.3f}",
+        help="The percentage of correct predictions made by the model on the unseen test dataset."
+    )
 
     st.divider()
 
@@ -222,7 +255,13 @@ elif activity == "Activity 3 - Model Training (Neural Nets)":
     input_cols = st.columns(4)
     for idx, col in enumerate(df.columns[:-1]):
         with input_cols[idx % 4]:
-            input_data[col] = st.slider(col, float(df[col].min()), float(df[col].max()), float(df[col].median()))
+            input_data[col] = st.slider(
+                col, 
+                float(df[col].min()), 
+                float(df[col].max()), 
+                float(df[col].median()),
+                help=f"Adjust the {col} value."
+            )
 
     # Make Prediction
     user_df = pd.DataFrame([input_data])
@@ -242,38 +281,69 @@ elif activity == "Activity 3 - Model Training (Neural Nets)":
         
     st.progress(prob[1], text=f"Calculated Probability: {prob[1]*100:.1f}%")
 
+    if model_choice == "Decision Tree":
+        st.divider()
+        st.subheader("Decision Tree Visualization")
+        st.write("The chart below maps out the exact mathematical rules the decision tree learned to classify patients.")
+        fig, ax = plt.subplots(figsize=(15, 6))
+        plot_tree(model, feature_names=df.columns[:-1], class_names=["Stable", "Failure/Mortality"], filled=True, fontsize=10, max_depth=3)
+        st.pyplot(fig)
+
 # --------------------
 # Activity 4 - Cross-Validation
 # --------------------
 elif activity == "Activity 4 - Cross-Validation Analysis":
     st.header("Activity 4 - Cross-Validation Analysis")
-    st.write("Cross-validation splits the data into multiple 'folds' to ensure our model is stable and reproducible across different data subpopulations.")
+    st.write("Cross-validation splits the data into multiple 'folds' to ensure our model is stable and reproducible across different data subpopulations. ")
 
-    model_choice = st.selectbox("Select Model for Cross-Validation", ["Deep Neural Network (MLP)", "Decision Tree", "Random Forest"])
-    cv_folds = st.slider("Number of Validation Folds", 2, 10, 5)
+    model_choice = st.selectbox(
+        "Select Model for Cross-Validation", 
+        ["Deep Neural Network (MLP)", "Decision Tree", "Random Forest"],
+        help="Select the model to evaluate using cross-validation."
+    )
+    cv_folds = st.slider(
+        "Number of Validation Folds", 2, 10, 5,
+        help="How many pieces to divide the dataset into. 5 folds means the model trains 5 separate times."
+    )
 
     if model_choice == "Decision Tree":
         model = DecisionTreeClassifier(max_depth=4, random_state=42)
     elif model_choice == "Random Forest":
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        # Multithreading enabled for Random Forest
+        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
     else:
-        model = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=1000, random_state=42)
+        st.info("💡 **Note:** Neural Networks are computationally expensive. We have enabled multithreading and 'early stopping' to prevent the app from idling.")
+        # Early stopping and reduced max_iter prevent the app from hanging
+        model = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, early_stopping=True, random_state=42)
 
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values
     
+    # Neural Nets require scaled data before cross-validation
     if model_choice == "Deep Neural Network (MLP)":
         from sklearn.preprocessing import StandardScaler
         X = StandardScaler().fit_transform(X)
     
-    with st.spinner('Running cross-validation...'):
-        scores = cross_val_score(model, X, y, cv=cv_folds)
+    with st.spinner(f'Running cross-validation ({cv_folds} folds). This may take a moment...'):
+        # n_jobs=-1 utilizes all available CPU cores to speed up CV
+        scores = cross_val_score(model, X, y, cv=cv_folds, n_jobs=-1)
 
-    st.metric("Mean CV Accuracy", f"{np.mean(scores):.3f}")
+    st.metric(
+        "Mean CV Accuracy", 
+        f"{np.mean(scores):.3f}",
+        help="The average accuracy across all the cross-validation folds. This represents a more realistic expectation of real-world performance."
+    )
 
     # Plot the results
     cv_df = pd.DataFrame({"Fold": [f"Fold {i+1}" for i in range(cv_folds)], "Accuracy": scores})
     
-    fig = px.bar(cv_df, x="Fold", y="Accuracy", title=f"{outcome_label} Prediction Accuracy per Validation Fold", text_auto=".3f", range_y=[0, 1])
+    fig = px.bar(
+        cv_df, 
+        x="Fold", 
+        y="Accuracy", 
+        title=f"{outcome_label} Prediction Accuracy per Validation Fold", 
+        text_auto=".3f", 
+        range_y=[0, 1]
+    )
     fig.add_hline(y=np.mean(scores), line_dash="dash", line_color="red", annotation_text="Mean Accuracy")
     st.plotly_chart(fig, use_container_width=True)
