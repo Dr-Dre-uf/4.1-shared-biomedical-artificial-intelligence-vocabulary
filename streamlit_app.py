@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, StratifiedKFold
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 import plotly.express as px
 import psutil
@@ -111,20 +111,26 @@ if activity == "Activity 1 - Explore eICU Data":
     st.dataframe(display_df.head(n_rows), use_container_width=True)
     
     st.subheader("Feature Distributions")
-    st.write("Use the dropdown below to visualize how specific features vary between the two outcome classes. Notice if certain thresholds seem to separate the classes.")
+    st.write("Use the dropdown below to visualize how specific features vary between the two outcome classes.")
     
     feature_to_plot = st.selectbox(
         "Select an eICU feature to visualize:", 
         df.columns[:-1],
-        help="Choose a specific metric (like Admission Glucose or BMI) to see a histogram of its distribution."
+        help="Choose a specific metric to see a histogram of its distribution."
     )
     
+    # ADA COMPLIANCE: Using Colorblind safe colors (Blue & Orange)
     fig = px.histogram(
         display_df, x=feature_to_plot, color=outcome_label, barmode="overlay",
         title=f"Distribution of {feature_to_plot} grouped by {outcome_label}",
-        color_discrete_sequence=["#00CC96", "#EF553B"]
+        color_discrete_sequence=["#1f77b4", "#ff7f0e"] 
     )
     st.plotly_chart(fig, use_container_width=True)
+    
+    # ADA COMPLIANCE: Text alternative for the visual chart
+    with st.expander(f"View chart data as text (Accessible Alternative)"):
+        st.write(f"Summary statistics for {feature_to_plot} grouped by {outcome_label}:")
+        st.dataframe(display_df.groupby(outcome_label)[feature_to_plot].describe())
 
 # --------------------
 # Activity 2 - Preprocessing
@@ -148,15 +154,25 @@ elif activity == "Activity 2 - Preprocessing & Splitting":
         "Set": ["Training Data (Model Learning)", "Testing Data (Model Evaluation)"],
         "Count": [len(X_train), len(X_test)]
     })
-    fig = px.pie(split_df, values="Count", names="Set", title="eICU Cohort Data Split", hole=0.4)
+    
+    # ADA COMPLIANCE: Colorblind safe colors
+    fig = px.pie(
+        split_df, values="Count", names="Set", title="eICU Cohort Data Split", hole=0.4,
+        color_discrete_sequence=["#1f77b4", "#ff7f0e"]
+    )
     st.plotly_chart(fig, use_container_width=True)
+    
+    # ADA COMPLIANCE: Text alternative for the Pie Chart
+    with st.expander("View split proportions as text (Accessible Alternative)"):
+        st.write("Data Split Summary:")
+        st.dataframe(split_df)
 
 # --------------------
 # Activity 3 - Train & Predict
 # --------------------
 elif activity == "Activity 3 - Decision Tree Training":
     st.header("Activity 3 - Decision Tree Training & Prediction")
-    st.write("**Instructions:** Configure the hyperparameters of the Decision Tree, then evaluate its accuracy on the test set. Finally, use the interactive simulator to test the model yourself.")
+    st.write("**Instructions:** Configure the hyperparameters of the Decision Tree, evaluate its accuracy, and use the interactive simulator to test the model yourself.")
 
     st.subheader("1. Configure the Decision Tree")
     col1, col2 = st.columns(2)
@@ -213,9 +229,15 @@ elif activity == "Activity 3 - Decision Tree Training":
 
     st.subheader("Decision Tree Visualization")
     st.write("The chart below maps out the exact mathematical rules the algorithm learned. Follow the branches (True goes left, False goes right) to see how it makes a decision.")
+    
     fig, ax = plt.subplots(figsize=(15, 6))
     plot_tree(model, feature_names=df.columns[:-1], class_names=["Stable/Survival", "Failure/Mortality"], filled=True, fontsize=10, max_depth=3)
     st.pyplot(fig)
+    
+    # ADA COMPLIANCE: Text alternative for the Graphical Decision Tree
+    with st.expander("View Decision Tree rules as text (Accessible Alternative)"):
+        tree_rules = export_text(model, feature_names=list(df.columns[:-1]))
+        st.text(tree_rules)
 
 # --------------------
 # Activity 4 - Cross-Validation
@@ -235,7 +257,6 @@ elif activity == "Activity 4 - Cross-Validation Analysis":
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values
     
-    # Calculate advanced metrics to match the notebook
     skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
     accuracies, sensitivities, specificities, precisions = [], [], [], []
 
@@ -260,10 +281,18 @@ elif activity == "Activity 4 - Cross-Validation Analysis":
     col4.metric("Average Precision", f"{np.mean(precisions):.4f}", help="Positive Predictive Value: Proportion of positive predictions that were actually correct.")
 
     cv_df = pd.DataFrame({"Fold": [f"Fold {i+1}" for i in range(cv_folds)], "Accuracy": accuracies})
+    
+    # ADA COMPLIANCE: Using Colorblind safe color (Blue)
     fig = px.bar(
         cv_df, x="Fold", y="Accuracy", 
         title=f"{outcome_label} Accuracy per Fold", 
-        text_auto=".3f", range_y=[0, 1]
+        text_auto=".3f", range_y=[0, 1],
+        color_discrete_sequence=["#1f77b4"]
     )
-    fig.add_hline(y=np.mean(accuracies), line_dash="dash", line_color="red", annotation_text="Mean Accuracy")
+    fig.add_hline(y=np.mean(accuracies), line_dash="dash", line_color="#ff7f0e", annotation_text="Mean Accuracy")
     st.plotly_chart(fig, use_container_width=True)
+    
+    # ADA COMPLIANCE: Text alternative for the Bar Chart
+    with st.expander("View fold accuracies as text (Accessible Alternative)"):
+        st.write("Accuracy breakdown per fold:")
+        st.dataframe(cv_df)
