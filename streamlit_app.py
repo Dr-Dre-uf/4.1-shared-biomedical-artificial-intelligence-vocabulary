@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.subplots as plt_sub
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
@@ -26,7 +27,7 @@ def display_performance_monitor():
 # ---------------------------------
 # Page Config & Sidebar
 # ---------------------------------
-st.set_page_config(page_title="Biomedical AI Demo", layout="wide")
+st.set_page_config(page_title="Shared Biomedical AI Vocabulary", layout="wide")
 
 st.sidebar.markdown("### 1. Select Perspective")
 perspective = st.sidebar.radio(
@@ -59,7 +60,7 @@ else:
     app_desc = "Interactive demonstration of a computational biology pipeline. Watch how a Decision Tree models pathophysiological mechanisms to discover critical thresholds in physiological biomarkers."
     outcome_label = "Systemic Failure (0=Stable, 1=Failure)"
 
-st.title("Module 4: Biomedical AI Pipeline Demonstration")
+st.title("Shared Biomedical Artificial Intelligence Vocabulary")
 st.write(app_desc)
 
 # ---------------------------------
@@ -190,8 +191,8 @@ elif activity == "Activity 3 - Model Training":
     
     st.divider()
     st.subheader("Decision Tree Visualization")
-    
     st.write("This graphic maps out the exact mathematical thresholds the algorithm uses to sort data and make decisions.")
+    
     
     fig, ax = plt.subplots(figsize=(20, 10))
     plot_tree(dt, feature_names=df.columns[:-1], class_names=["0", "1"], filled=True, rounded=True, fontsize=10)
