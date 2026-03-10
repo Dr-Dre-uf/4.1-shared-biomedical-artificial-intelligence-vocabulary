@@ -39,9 +39,10 @@ st.sidebar.markdown("### 2. Navigation")
 activity = st.sidebar.radio(
     "Go to:",
     [
-        "Activity 1 - Data Preprocessing",
-        "Activity 2 - Model Training",
-        "Activity 3 - Cross-validation"
+        "Activity 1 - Data Exploration",
+        "Activity 2 - Data Preprocessing",
+        "Activity 3 - Model Training",
+        "Activity 4 - Cross-Validation"
     ],
     help="Select an activity to interact with the corresponding stage of the pipeline."
 )
@@ -77,13 +78,56 @@ def load_data():
 df = load_data()
 
 # --------------------
-# Activity 1 - Preprocessing
+# Activity 1 - Data Exploration
 # --------------------
-if activity == "Activity 1 - Data Preprocessing":
-    st.header("Activity 1: Data Preprocessing and Splitting")
+if activity == "Activity 1 - Data Exploration":
+    st.header("Activity 1: Exploring Data Types")
     
     st.markdown("### Instructions")
-    st.write("Before a model can learn, the data must be divided into features (the inputs) and a target (the outcome). Furthermore, the data must be split into a Training Set and a Testing Set. Use the slider below to adjust the ratio of this split and observe how the data is partitioned.")
+    st.write("Before training a model, data scientists must inspect the raw data to understand feature distributions and identify correlations with the outcome variable. Use the controls below to preview the dataset and inspect the data types.")
+    
+    st.subheader("Data Preview")
+    n_rows = st.slider(
+        "Number of records to display", 
+        min_value=1, max_value=20, value=5,
+        help="Drag the slider to increase or decrease the number of rows visible in the table below."
+    )
+    st.dataframe(df.head(n_rows), use_container_width=True)
+    
+    with st.expander("View Data Types (.dtypes)"):
+        st.write("These are the variable types the computer recognizes for each column:")
+        st.write(df.dtypes)
+    
+    st.subheader("Feature Distributions")
+    feature_to_plot = st.selectbox(
+        "Select a feature to visualize:", 
+        df.columns[:-1],
+        help="Choose a specific metric to see a histogram of its distribution."
+    )
+    
+    # ADA COMPLIANCE: Colorblind safe colors (Blue & Orange)
+    fig = px.histogram(
+        df, x=feature_to_plot, color="Outcome", barmode="overlay",
+        title=f"Distribution of {feature_to_plot} grouped by Outcome",
+        color_discrete_sequence=["#1f77b4", "#ff7f0e"] 
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    with st.expander("View chart data as text (Accessible Alternative)"):
+        st.dataframe(df.groupby("Outcome")[feature_to_plot].describe())
+
+    st.markdown("---")
+    with st.expander("Reveal Expected Insights for Data Exploration"):
+        st.write("By inspecting the dataset, you should notice there are 8 input features (predictors) containing numerical data (integers and floats), and 1 binary outcome variable containing integers (0 or 1).")
+
+# --------------------
+# Activity 2 - Preprocessing
+# --------------------
+elif activity == "Activity 2 - Data Preprocessing":
+    st.header("Activity 2: Data Preprocessing and Splitting")
+    
+    st.markdown("### Instructions")
+    st.write("Before a model can learn, the data must be partitioned into a Training Set and a Testing Set. Use the slider below to adjust the ratio of this split and observe how the data is divided.")
 
     X = df.iloc[:, :-1].copy()
     y = df.iloc[:, -1].copy()
@@ -115,10 +159,10 @@ if activity == "Activity 1 - Data Preprocessing":
         st.write("This separation is critical. If we evaluated the model on the exact same data it was trained on, it would likely memorize the answers (overfitting), resulting in falsely high performance metrics that would fail in real-world scenarios.")
 
 # --------------------
-# Activity 2 - Train & Predict
+# Activity 3 - Train & Predict
 # --------------------
-elif activity == "Activity 2 - Model Training":
-    st.header("Activity 2: Model Training and Interactive Prediction")
+elif activity == "Activity 3 - Model Training":
+    st.header("Activity 3: Model Training and Interactive Prediction")
     
     st.markdown("### Instructions")
     st.write("With the data prepared, we can train the Decision Tree Classifier. Adjust the 'Max Depth' parameter to control how complex the model's rules can become. Then, explore the Decision Tree Visualization to trace the mathematical logic the model uses to make a prediction. Finally, test the model yourself using the live simulator.")
@@ -146,6 +190,7 @@ elif activity == "Activity 2 - Model Training":
     
     st.divider()
     st.subheader("Decision Tree Visualization")
+    
     st.write("This graphic maps out the exact mathematical thresholds the algorithm uses to sort data and make decisions.")
     
     fig, ax = plt.subplots(figsize=(20, 10))
@@ -181,17 +226,18 @@ elif activity == "Activity 2 - Model Training":
 
     st.markdown("---")
     with st.expander("Reveal Expected Insights for Model Training"):
-        st.write("Using the notebook's default Max Depth of 4, you should observe an accuracy of approximately **0.6948**.")
+        st.write("Using the notebook's default Max Depth of 4, you should observe an accuracy of approximately 0.6948.")
         st.write("Looking at the Decision Tree Visualization, you should expect to see the model heavily prioritizing features like Glucose and BMI near the top of the tree. These primary splits indicate the strongest predictors of the outcome variable within this dataset.")
 
 # --------------------
-# Activity 3 - Cross-Validation
+# Activity 4 - Cross-Validation
 # --------------------
-elif activity == "Activity 3 - Cross-validation":
-    st.header("Activity 3: Cross-validation")
+elif activity == "Activity 4 - Cross-Validation":
+    st.header("Activity 4: Cross-Validation")
     
     st.markdown("### Instructions")
     st.write("A single Train/Test split can be sensitive to exactly how the data was randomly divided. Cross-validation provides a more robust evaluation by dividing the dataset into multiple 'folds'. The model is trained and tested on every fold. Adjust the number of folds below to see how the average metrics stabilize.")
+    
 
     cv_folds = st.slider(
         "Folds (cv)", 
@@ -236,5 +282,5 @@ elif activity == "Activity 3 - Cross-validation":
 
     st.markdown("---")
     with st.expander("Reveal Expected Insights for Cross-Validation"):
-        st.write("Using the default 5 folds, you should expect the Average Accuracy to rise slightly to approximately **0.7305** compared to the single Train/Test split.")
+        st.write("Using the default 5 folds, you should expect the Average Accuracy to rise slightly to approximately 0.7305 compared to the single Train/Test split.")
         st.write("You should also expect to see a higher Specificity (~0.7540) than Sensitivity (~0.6871). This reveals an important insight about the model: it is currently slightly better at correctly identifying stable patients (True Negatives) than it is at catching patients who experience failure/mortality (True Positives).")
