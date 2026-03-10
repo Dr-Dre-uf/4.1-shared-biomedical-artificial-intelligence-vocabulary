@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.subplots as plt_sub
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
@@ -140,6 +139,7 @@ elif activity == "Activity 2 - Data Preprocessing":
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
+    
     split_df = pd.DataFrame({
         "Set": ["Training Data", "Testing Data"],
         "Count": [len(X_train), len(X_test)]
